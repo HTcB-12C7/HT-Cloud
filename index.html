@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑铁云远程桌面 - 安全访问</title>
+    <style>
+        /* 同上样式 */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>黑铁云远程桌面 - 安全访问网关</h1>
+        <div class="warning">!!! HT Firewall!! Not Allowing! English! Visitors!! Using HT Cloud Services!!!</div>
+        
+        <div id="status">正在检查服务状态...</div>
+        
+        <div class="login-info">
+            <h3>服务信息：</h3>
+            <p><strong>用户名：</strong>HTcB-12C7</p>
+            <p><strong>认证方式：</strong>国际+中国密码组合认证</p>
+            <p><strong>数据中心：</strong>阿里云上海</p>
+        </div>
+
+        <button onclick="openRemoteDesktop()" class="btn" id="connectBtn" disabled>
+            启动远程桌面连接
+        </button>
+
+        <div id="connectionInfo" style="display: none; text-align: center; margin-top: 20px;">
+            <p>正在打开新窗口，如果被浏览器阻止，请允许弹出窗口</p>
+        </div>
+    </div>
+
+    <script>
+        // 检查服务可用性
+        async function checkService() {
+            try {
+                const response = await fetch('http://106.14.198.45:8080/guacamole/', {
+                    mode: 'no-cors',
+                    method: 'HEAD'
+                });
+                document.getElementById('status').innerHTML = '✅ 服务状态：在线';
+                document.getElementById('connectBtn').disabled = false;
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ 服务状态：离线或无法访问';
+            }
+        }
+
+        function openRemoteDesktop() {
+            const newWindow = window.open('http://106.14.198.45:8080/guacamole/', '_blank');
+            document.getElementById('connectionInfo').style.display = 'block';
+            
+            if (!newWindow) {
+                alert('弹出窗口被阻止，请允许弹出窗口或手动访问：http://106.14.198.45:8080/guacamole/');
+            }
+        }
+
+        // 页面加载时检查服务状态
+        window.addEventListener('load', checkService);
+    </script>
+</body>
+</html>

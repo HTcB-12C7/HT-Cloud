@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>黑铁云远程桌面服务</title>
     <style>
-        /* 保持原有样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -99,9 +98,6 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
         }
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        }
         .btn-success {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
@@ -127,11 +123,6 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        .status.offline {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
         .footer {
             text-align: center;
             color: white;
@@ -153,17 +144,12 @@
         .modal-content {
             position: relative;
             background-color: white;
-            margin: 1% auto;
+            margin: 2% auto;
             padding: 0;
-            width: 98%;
-            height: 96%;
+            width: 95%;
+            height: 90%;
             border-radius: 15px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        @keyframes modalSlideIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
         }
         .modal-header {
             background: #2a5298;
@@ -191,20 +177,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s;
         }
         .close-btn:hover {
             background: rgba(255,255,255,0.2);
         }
         .modal-body {
             height: calc(100% - 60px);
-            padding: 0;
-        }
-        .remote-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 0 0 15px 15px;
+            padding: 20px;
         }
         .loading {
             display: flex;
@@ -212,8 +191,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            background: #f8f9fa;
-            border-radius: 0 0 15px 15px;
+            text-align: center;
         }
         .spinner {
             width: 50px;
@@ -259,15 +237,15 @@
                     </div>
                 </div>
 
-                <div id="serviceStatus" class="status online">
+                <div class="status online">
                     ✅ 服务状态：在线
                 </div>
 
-                <button onclick="openRemoteDesktopModal()" class="btn" id="connectBtn">
+                <button id="connectBtn" class="btn">
                     🚀 启动远程桌面连接
                 </button>
 
-                <button onclick="downloadLocalProxy()" class="btn btn-success">
+                <button id="downloadBtn" class="btn btn-success">
                     📥 下载本地代理页面
                 </button>
 
@@ -317,139 +295,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🖥️ 黑铁云远程桌面</h3>
-                <button class="close-btn" onclick="closeRemoteDesktopModal()">×</button>
+                <button class="close-btn" id="closeModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <div id="loadingIndicator" class="loading">
+                <div class="loading">
                     <div class="spinner"></div>
-                    <h3>正在尝试多种方式加载远程桌面...</h3>
-                    <p>如果无法加载，请使用"下载本地代理页面"</p>
-                    <div id="proxyStatus" style="margin-top: 20px;"></div>
-                </div>
-                <iframe 
-                    id="remoteFrame"
-                    class="remote-iframe"
-                    src=""
-                    allow="fullscreen"
-                    title="黑铁云远程桌面"
-                    onload="onRemoteFrameLoad()"
-                    onerror="onRemoteFrameError()">
-                </iframe>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 更好的CORS代理列表
-        const CORS_PROXIES = [
-            {
-                name: "CORS Proxy",
-                url: "https://api.codetabs.com/v1/proxy/?quest=",
-                working: true
-            },
-            {
-                name: "CORS.sh", 
-                url: "https://proxy.cors.sh/",
-                working: true
-            },
-            {
-                name: "AllOrigins",
-                url: "https://api.allorigins.win/raw?url=",
-                working: true
-            },
-            {
-                name: "WhateverOrigin",
-                url: "http://whateverorigin.org/get?url=",
-                working: true
-            }
-        ];
-
-        let currentProxyIndex = 0;
-        let retryCount = 0;
-        const MAX_RETRIES = 3;
-
-        // 获取代理URL
-        function getProxyUrl() {
-            const targetUrl = 'http://106.14.198.45:8080/guacamole/';
-            const proxy = CORS_PROXIES[currentProxyIndex];
-            
-            if (proxy.name === "WhateverOrigin") {
-                return proxy.url + encodeURIComponent(targetUrl) + '&callback=?';
-            } else if (proxy.name === "AllOrigins") {
-                return proxy.url + encodeURIComponent(targetUrl);
-            } else {
-                return proxy.url + encodeURIComponent(targetUrl);
-            }
-        }
-
-        // 更新代理状态显示
-        function updateProxyStatus(message) {
-            const statusElement = document.getElementById('proxyStatus');
-            statusElement.innerHTML = `
-                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px;">
-                    <strong>当前尝试:</strong> ${CORS_PROXIES[currentProxyIndex].name}<br>
-                    ${message}
-                </div>
-            `;
-        }
-
-        // 打开远程桌面模态框
-        function openRemoteDesktopModal() {
-            const modal = document.getElementById('remoteModal');
-            const remoteFrame = document.getElementById('remoteFrame');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            
-            modal.style.display = 'block';
-            loadingIndicator.style.display = 'flex';
-            remoteFrame.style.display = 'none';
-            retryCount = 0;
-            
-            // 先尝试直接加载（在某些浏览器中可能工作）
-            tryDirectLoad();
-        }
-
-        // 尝试直接加载
-        function tryDirectLoad() {
-            updateProxyStatus('尝试直接加载...');
-            const remoteFrame = document.getElementById('remoteFrame');
-            remoteFrame.src = 'http://106.14.198.45:8080/guacamole/';
-            
-            setTimeout(() => {
-                if (remoteFrame.style.display === 'none') {
-                    tryNextProxy();
-                }
-            }, 3000);
-        }
-
-        // 尝试下一个代理
-        function tryNextProxy() {
-            if (retryCount >= MAX_RETRIES) {
-                showFallbackOptions();
-                return;
-            }
-            
-            currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
-            retryCount++;
-            
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const remoteFrame = document.getElementById('remoteFrame');
-            
-            updateProxyStatus(`尝试中... (${retryCount}/${MAX_RETRIES})`);
-            
-            const proxyUrl = getProxyUrl();
-            console.log('使用代理:', CORS_PROXIES[currentProxyIndex].name, proxyUrl);
-            remoteFrame.src = proxyUrl;
-        }
-
-        // 显示备用选项
-        function showFallbackOptions() {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.innerHTML = `
-                <div style="text-align: center; color: #721c24;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🔧</div>
-                    <h3>需要手动解决方案</h3>
-                    <p>由于浏览器安全限制，无法直接加载</p>
-                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                    <h3>由于浏览器安全限制</h3>
+                    <p>无法在GitHub Pages中直接显示远程桌面</p>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px;">
                         <strong>推荐解决方案：</strong>
                         <ol style="text-align: left; margin: 10px 0; padding-left: 20px;">
                             <li>点击"下载本地代理页面"按钮</li>
@@ -457,18 +310,34 @@
                             <li>即可正常访问远程桌面</li>
                         </ol>
                     </div>
-                    <button onclick="downloadLocalProxy()" class="btn btn-success" style="margin: 10px;">
+                    <button id="downloadFromModalBtn" class="btn btn-success" style="margin: 10px;">
                         📥 下载本地代理页面
                     </button>
-                    <button onclick="closeRemoteDesktopModal()" class="btn btn-secondary" style="margin: 10px;">
+                    <button id="closeModalBtn2" class="btn" style="margin: 10px;">
                         关闭
                     </button>
                 </div>
-            `;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的函数定义
+        function openRemoteDesktopModal() {
+            console.log('打开模态框');
+            const modal = document.getElementById('remoteModal');
+            modal.style.display = 'block';
         }
 
-        // 下载本地代理页面
+        function closeRemoteDesktopModal() {
+            console.log('关闭模态框');
+            const modal = document.getElementById('remoteModal');
+            modal.style.display = 'none';
+        }
+
         function downloadLocalProxy() {
+            console.log('下载代理页面');
+            
             const proxyHTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -494,7 +363,6 @@
             margin: 20px;
             padding: 15px;
             border-radius: 10px;
-            backdrop-filter: blur(10px);
         }
         .info-item {
             margin: 10px 0;
@@ -517,7 +385,7 @@
     
     <div class="login-info">
         <div class="info-item"><strong>👤 用户名：</strong> HTcB-12C7</div>
-        <div class="info-item"><strong>🔑 密码：</strong> 国际+中国密码组合 (11275800HTc$——11495800Cqx￥)</div>
+        <div class="info-item"><strong>🔑 密码：</strong> 国际+中国密码组合</div>
         <div class="info-item"><strong>💻 目标：</strong> HTcWindows01 - 阿里云上海</div>
     </div>
 
@@ -525,66 +393,76 @@
             allow="fullscreen"
             title="黑铁云远程桌面">
     </iframe>
-
-    <script>
-        console.log('黑铁云远程桌面本地代理已启动');
-    </script>
 </body>
 </html>`;
             
-            const blob = new Blob([proxyHTML], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '黑铁云远程桌面代理.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            alert('✅ 代理页面已下载！\n\n请在工作电脑打开下载的HTML文件即可访问远程桌面。');
-        }
-
-        // 关闭远程桌面模态框
-        function closeRemoteDesktopModal() {
-            const modal = document.getElementById('remoteModal');
-            const remoteFrame = document.getElementById('remoteFrame');
-            
-            remoteFrame.src = '';
-            modal.style.display = 'none';
-            currentProxyIndex = 0;
-            retryCount = 0;
-        }
-
-        // iframe加载完成
-        function onRemoteFrameLoad() {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const remoteFrame = document.getElementById('remoteFrame');
-            
-            loadingIndicator.style.display = 'none';
-            remoteFrame.style.display = 'block';
-            console.log('远程桌面加载成功');
-        }
-
-        // iframe加载错误
-        function onRemoteFrameError() {
-            console.log('代理加载失败，尝试下一个');
-            setTimeout(tryNextProxy, 1000);
-        }
-
-        // 键盘快捷键
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeRemoteDesktopModal();
+            try {
+                const blob = new Blob([proxyHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '黑铁云远程桌面代理.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ 代理页面已下载！\\n\\n请在工作电脑打开下载的HTML文件即可访问远程桌面。');
+            } catch (error) {
+                console.error('下载失败:', error);
+                alert('下载失败，请重试');
             }
-        });
+        }
 
-        // 点击模态框外部关闭
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('remoteModal');
-            if (event.target === modal) {
-                closeRemoteDesktopModal();
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成');
+            
+            // 连接按钮
+            const connectBtn = document.getElementById('connectBtn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', openRemoteDesktopModal);
             }
+            
+            // 下载按钮
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadLocalProxy);
+            }
+            
+            // 模态框内的下载按钮
+            const downloadFromModalBtn = document.getElementById('downloadFromModalBtn');
+            if (downloadFromModalBtn) {
+                downloadFromModalBtn.addEventListener('click', downloadLocalProxy);
+            }
+            
+            // 关闭按钮
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeRemoteDesktopModal);
+            }
+            
+            const closeModalBtn2 = document.getElementById('closeModalBtn2');
+            if (closeModalBtn2) {
+                closeModalBtn2.addEventListener('click', closeRemoteDesktopModal);
+            }
+            
+            // 点击模态框外部关闭
+            const modal = document.getElementById('remoteModal');
+            if (modal) {
+                modal.addEventListener('click', function(event) {
+                    if (event.target === modal) {
+                        closeRemoteDesktopModal();
+                    }
+                });
+            }
+            
+            // ESC键关闭
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeRemoteDesktopModal();
+                }
+            });
         });
     </script>
 </body>

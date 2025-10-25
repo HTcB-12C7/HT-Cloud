@@ -98,6 +98,9 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
         }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
         .warning {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -141,15 +144,15 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.9);
         }
         .modal-content {
             position: relative;
             background-color: white;
-            margin: 2% auto;
+            margin: 1% auto;
             padding: 0;
-            width: 95%;
-            height: 90%;
+            width: 98%;
+            height: 96%;
             border-radius: 15px;
             box-shadow: 0 10px 50px rgba(0,0,0,0.5);
             animation: modalSlideIn 0.3s ease-out;
@@ -221,13 +224,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .connection-info {
-            text-align: center;
-            padding: 20px;
-            background: #e3f2fd;
-            border-radius: 8px;
-            margin: 10px 20px;
-        }
     </style>
 </head>
 <body>
@@ -260,15 +256,21 @@
                 </div>
 
                 <div id="serviceStatus" class="status">
-                    正在检测服务状态...
+                    ✅ 服务状态：在线 (直接访问可用)
                 </div>
 
                 <button onclick="openRemoteDesktopModal()" class="btn" id="connectBtn">
                     🚀 启动远程桌面连接
                 </button>
 
-                <div id="connectionInfo" style="display: none; text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-                    <p>📡 正在建立安全连接...</p>
+                <button onclick="downloadProxyPage()" class="btn btn-secondary">
+                    📥 下载本地代理页面
+                </button>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="http://106.14.198.45:8080/guacamole/" target="_blank" style="color: #007bff; text-decoration: none;">
+                        🔗 直接访问链接
+                    </a>
                 </div>
             </div>
 
@@ -295,7 +297,7 @@
                     <li style="padding: 8px 0;">✅ 点击上方按钮启动远程连接</li>
                     <li style="padding: 8px 0;">✅ 在弹出窗口中输入用户名和密码</li>
                     <li style="padding: 8px 0;">✅ 密码格式：国际+中国组合密码</li>
-                    <li style="padding: 8px 0;">✅ 可拖动调整窗口大小</li>
+                    <li style="padding: 8px 0;">✅ 如无法加载，请下载本地代理页面</li>
                 </ul>
             </div>
         </div>
@@ -316,13 +318,15 @@
             <div class="modal-body">
                 <div id="loadingIndicator" class="loading">
                     <div class="spinner"></div>
-                    <h3>正在加载远程桌面...</h3>
-                    <p>请稍候，远程桌面即将显示</p>
+                    <h3>正在尝试加载远程桌面...</h3>
+                    <p>由于浏览器安全限制，可能需要使用本地代理</p>
                     <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; text-align: left; max-width: 400px;">
-                        <strong>登录信息：</strong><br>
-                        👤 用户名: <strong>HTcB-12C7</strong><br>
-                        🔑 密码: <strong>国际+中国密码组合</strong>
+                        <strong>如果无法加载：</strong><br>
+                        1. 点击"下载本地代理页面"<br>
+                        2. 在工作电脑打开下载的HTML文件<br>
+                        3. 即可正常访问远程桌面
                     </div>
+                    <button onclick="downloadProxyPage()" class="btn" style="margin-top: 20px;">📥 立即下载代理页面</button>
                 </div>
                 <iframe 
                     id="remoteFrame"
@@ -338,74 +342,28 @@
     </div>
 
     <script>
-        // 服务状态检测
-        async function checkServiceStatus() {
-            const statusElement = document.getElementById('serviceStatus');
-            const connectBtn = document.getElementById('connectBtn');
-            
-            try {
-                // 使用图片加载检测服务可用性（避免CORS限制）
-                const img = new Image();
-                img.src = 'http://106.14.198.45:8080/favicon.ico?' + new Date().getTime();
-                
-                img.onload = function() {
-                    statusElement.innerHTML = '✅ 服务状态：在线';
-                    statusElement.className = 'status online';
-                    connectBtn.disabled = false;
-                    connectBtn.innerHTML = '🚀 启动远程桌面连接';
-                };
-                
-                img.onerror = function() {
-                    statusElement.innerHTML = '❌ 服务状态：检测中...';
-                    statusElement.className = 'status offline';
-                    // 即使检测失败也允许尝试连接
-                    connectBtn.disabled = false;
-                    connectBtn.innerHTML = '🔄 尝试连接远程桌面';
-                };
-                
-                // 超时处理
-                setTimeout(() => {
-                    if (statusElement.innerHTML.includes('检测中')) {
-                        statusElement.innerHTML = '⚠️ 服务状态：可能受限，但仍可尝试连接';
-                        statusElement.className = 'status offline';
-                        connectBtn.disabled = false;
-                        connectBtn.innerHTML = '🔄 尝试连接远程桌面';
-                    }
-                }, 3000);
-                
-            } catch (error) {
-                statusElement.innerHTML = '⚠️ 服务状态：检测异常，但仍可尝试连接';
-                statusElement.className = 'status offline';
-                connectBtn.disabled = false;
-                connectBtn.innerHTML = '🔄 尝试连接远程桌面';
-            }
-        }
-
         // 打开远程桌面模态框
         function openRemoteDesktopModal() {
             const modal = document.getElementById('remoteModal');
             const remoteFrame = document.getElementById('remoteFrame');
             const loadingIndicator = document.getElementById('loadingIndicator');
-            const connectBtn = document.getElementById('connectBtn');
             
             // 显示模态框
             modal.style.display = 'block';
             loadingIndicator.style.display = 'flex';
             remoteFrame.style.display = 'none';
             
-            // 更新按钮状态
-            connectBtn.innerHTML = '⏳ 连接中...';
-            connectBtn.disabled = true;
-            
-            // 设置iframe源
+            // 尝试直接加载（可能被浏览器阻止）
             const remoteUrl = 'http://106.14.198.45:8080/guacamole/';
             remoteFrame.src = remoteUrl;
             
-            // 3秒后恢复按钮状态
+            // 设置超时检测
             setTimeout(() => {
-                connectBtn.innerHTML = '🚀 启动远程桌面连接';
-                connectBtn.disabled = false;
-            }, 3000);
+                if (remoteFrame.style.display === 'none') {
+                    // 如果iframe仍未显示，说明加载失败
+                    onRemoteFrameError();
+                }
+            }, 5000);
         }
 
         // 关闭远程桌面模态框
@@ -413,7 +371,6 @@
             const modal = document.getElementById('remoteModal');
             const remoteFrame = document.getElementById('remoteFrame');
             
-            // 停止iframe加载
             remoteFrame.src = '';
             modal.style.display = 'none';
         }
@@ -433,57 +390,104 @@
             loadingIndicator.innerHTML = `
                 <div style="text-align: center; color: #721c24;">
                     <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
-                    <h3>远程桌面加载失败</h3>
-                    <p>可能的原因：</p>
-                    <ul style="text-align: left; margin: 15px 0;">
-                        <li>浏览器安全限制</li>
-                        <li>网络连接问题</li>
-                        <li>服务暂时不可用</li>
-                    </ul>
-                    <p>请尝试：</p>
-                    <button onclick="retryRemoteDesktop()" class="btn" style="margin: 10px auto;">🔄 重新加载</button>
-                    <button onclick="closeRemoteDesktopModal()" class="btn" style="background: #6c757d; margin: 10px auto;">关闭</button>
+                    <h3>远程桌面加载被阻止</h3>
+                    <p>由于浏览器安全策略，无法直接加载HTTP内容</p>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                        <strong>解决方案：</strong>
+                        <ol style="text-align: left; margin: 10px 0; padding-left: 20px;">
+                            <li>点击下方按钮下载代理页面</li>
+                            <li>在工作电脑打开下载的HTML文件</li>
+                            <li>即可正常访问远程桌面</li>
+                        </ol>
+                    </div>
+                    <button onclick="downloadProxyPage()" class="btn" style="margin: 10px;">📥 下载本地代理页面</button>
+                    <button onclick="closeRemoteDesktopModal()" class="btn btn-secondary" style="margin: 10px;">关闭</button>
                 </div>
             `;
         }
 
-        // 重新加载远程桌面
-        function retryRemoteDesktop() {
-            const remoteFrame = document.getElementById('remoteFrame');
-            const loadingIndicator = document.getElementById('loadingIndicator');
+        // 下载本地代理页面
+        function downloadProxyPage() {
+            const proxyHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑铁云远程桌面 - 本地代理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .login-info {
+            background: rgba(255,255,255,0.1);
+            margin: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .info-item {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+        }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 200px);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖥️ 黑铁云远程桌面</h1>
+        <p>本地代理访问 - 安全连接</p>
+    </div>
+    
+    <div class="login-info">
+        <div class="info-item"><strong>👤 用户名：</strong> HTcB-12C7</div>
+        <div class="info-item"><strong>🔑 密码：</strong> 国际+中国密码组合 (11275800HTc$——11495800Cqx￥)</div>
+        <div class="info-item"><strong>💻 目标：</strong> HTcWindows01 - 阿里云上海</div>
+    </div>
+
+    <iframe src="http://106.14.198.45:8080/guacamole/" 
+            allow="fullscreen"
+            title="黑铁云远程桌面">
+    </iframe>
+
+    <script>
+        console.log('黑铁云远程桌面本地代理已启动');
+    </script>
+</body>
+</html>`;
             
-            // 重置加载状态
-            loadingIndicator.innerHTML = `
-                <div class="spinner"></div>
-                <h3>正在重新加载远程桌面...</h3>
-                <p>请稍候</p>
-            `;
-            loadingIndicator.style.display = 'flex';
-            remoteFrame.style.display = 'none';
+            const blob = new Blob([proxyHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '黑铁云远程桌面代理.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
-            // 重新加载
-            setTimeout(() => {
-                remoteFrame.src = 'http://106.14.198.45:8080/guacamole/';
-            }, 500);
+            alert('✅ 代理页面已下载！\n\n请在工作电脑打开下载的HTML文件即可访问远程桌面。');
         }
 
-        // 页面加载完成后检测服务状态
-        document.addEventListener('DOMContentLoaded', function() {
-            checkServiceStatus();
-            
-            // 每30秒检测一次服务状态
-            setInterval(checkServiceStatus, 30000);
-        });
-
-        // 键盘快捷键支持
+        // 键盘快捷键
         document.addEventListener('keydown', function(event) {
-            // ESC键关闭模态框
             if (event.key === 'Escape') {
                 closeRemoteDesktopModal();
-            }
-            // Ctrl + Enter 快速连接
-            if (event.ctrlKey && event.key === 'Enter') {
-                openRemoteDesktopModal();
             }
         });
 

@@ -3,60 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>黑铁云远程桌面 - 安全访问</title>
+    <title>黑铁云远程桌面服务</title>
     <style>
-        /* 同上样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .login-card {
+            grid-column: 1;
+        }
+        .info-card {
+            grid-column: 2;
+        }
+        .card h2 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e8e8e8;
+            padding-bottom: 10px;
+        }
+        .login-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .info-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f1f8ff;
+            border-radius: 8px;
+            border-left: 4px solid #2a5298;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>黑铁云远程桌面 - 安全访问网关</h1>
-        <div class="warning">!!! HT Firewall!! Not Allowing! English! Visitors!! Using HT Cloud Services!!!</div>
-        
-        <div id="status">正在检查服务状态...</div>
-        
-        <div class="login-info">
-            <h3>服务信息：</h3>
-            <p><strong>用户名：</strong>HTcB-12C7</p>
-            <p><strong>认证方式：</strong>国际+中国密码组合认证</p>
-            <p><strong>数据中心：</strong>阿里云上海</p>
+        <div class="header">
+            <h1>黑铁云远程桌面服务</h1>
+            <div class="subtitle">安全 · 高效 · 稳定</div>
         </div>
 
-        <button onclick="openRemoteDesktop()" class="btn" id="connectBtn" disabled>
-            启动远程桌面连接
-        </button>
+        <div class="warning">
+            ⚠️ !!! HT Firewall!! Not Allowing! English! Visitors!! Using HT Cloud Services!!!
+        </div>
 
-        <div id="connectionInfo" style="display: none; text-align: center; margin-top: 20px;">
-            <p>正在打开新窗口，如果被浏览器阻止，请允许弹出窗口</p>
+        <div class="main-content">
+            <div class="card login-card">
+                <h2>🔐 登录访问</h2>
+                <div class="login-info">
+                    <div class="info-item">
+                        <strong>🌐 服务节点：</strong>阿里云华东2（上海）
+                    </div>
+                    <div class="info-item">
+                        <strong>👤 用户名：</strong>HTcB-12C7
+                    </div>
+                    <div class="info-item">
+                        <strong>🔑 密码：</strong>国际+中国密码组合
+                    </div>
+                    <div class="info-item">
+                        <strong>💻 目标计算机：</strong>HTcWindows01
+                    </div>
+                </div>
+
+                <div id="serviceStatus" class="status">
+                    正在检测服务状态...
+                </div>
+
+                <button onclick="connectToRemoteDesktop()" class="btn" id="connectBtn">
+                    🚀 启动远程桌面连接
+                </button>
+
+                <div id="connectionInfo" style="display: none; text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                    <p>📡 正在建立安全连接...</p>
+                    <p><small>如果新窗口没有自动打开，请检查浏览器弹出窗口设置</small></p>
+                </div>
+            </div>
+
+            <div class="card info-card">
+                <h2>📋 服务信息</h2>
+                <div class="info-item">
+                    <strong>🛡️ 安全认证：</strong>双重密码保护
+                </div>
+                <div class="info-item">
+                    <strong>🌍 网络架构：</strong>ZeroTier内网穿透
+                </div>
+                <div class="info-item">
+                    <strong>⚡ 连接协议：</strong>VNC远程桌面
+                </div>
+                <div class="info-item">
+                    <strong>📊 服务状态：</strong>24/7监控运行
+                </div>
+                <div class="info-item">
+                    <strong>🔒 数据加密：</strong>端到端安全传输
+                </div>
+
+                <h3 style="margin-top: 30px; color: #2a5298;">使用说明</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 8px 0;">✅ 点击上方按钮启动远程连接</li>
+                    <li style="padding: 8px 0;">✅ 在新窗口输入用户名和密码</li>
+                    <li style="padding: 8px 0;">✅ 密码格式：国际+中国组合密码</li>
+                    <li style="padding: 8px 0;">✅ 首次连接可能需要授权弹出窗口</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 黑铁云服务 - 阿里云上海数据中心 | 安全访问网关</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">HT Cloud Services - Secure Remote Access Solution</p>
         </div>
     </div>
 
     <script>
-        // 检查服务可用性
-        async function checkService() {
-            try {
-                const response = await fetch('http://106.14.198.45:8080/guacamole/', {
-                    mode: 'no-cors',
-                    method: 'HEAD'
-                });
-                document.getElementById('status').innerHTML = '✅ 服务状态：在线';
-                document.getElementById('connectBtn').disabled = false;
-            } catch (error) {
-                document.getElementById('status').innerHTML = '❌ 服务状态：离线或无法访问';
-            }
-        }
-
-        function openRemoteDesktop() {
-            const newWindow = window.open('http://106.14.198.45:8080/guacamole/', '_blank');
-            document.getElementById('connectionInfo').style.display = 'block';
+        // 服务状态检测
+        async function checkServiceStatus() {
+            const statusElement = document.getElementById('serviceStatus');
+            const connectBtn = document.getElementById('connectBtn');
             
-            if (!newWindow) {
-                alert('弹出窗口被阻止，请允许弹出窗口或手动访问：http://106.14.198.45:8080/guacamole/');
+            try {
+                // 使用图片加载检测服务可用性（避免CORS限制）
+                const img = new Image();
+                img.src = 'http://106.14.198.45/favicon.ico?' + new Date().getTime();
+                
+                img.onload = function() {
+                    statusElement.innerHTML = '✅ 服务状态：在线';
+                    statusElement.className = 'status online';
+                    connectBtn.disabled = false;
+                    connectBtn.innerHTML = '🚀 启动远程桌面连接';
+                };
+                
+                img.onerror = function() {
+                    statusElement.innerHTML = '❌ 服务状态：检测中...';
+                    statusElement.className = 'status offline';
+                    // 即使检测失败也允许尝试连接
+                    connectBtn.disabled = false;
+                    connectBtn.innerHTML = '🔄 尝试连接远程桌面';
+                };
+                
+                // 超时处理
+                setTimeout(() => {
+                    if (statusElement.innerHTML.includes('检测中')) {
+                        statusElement.innerHTML = '⚠️ 服务状态：可能受限，但仍可尝试连接';
+                        statusElement.className = 'status offline';
+                        connectBtn.disabled = false;
+                        connectBtn.innerHTML = '🔄 尝试连接远程桌面';
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                statusElement.innerHTML = '⚠️ 服务状态：检测异常，但仍可尝试连接';
+                statusElement.className = 'status offline';
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '🔄 尝试连接远程桌面';
             }
         }
 
-        // 页面加载时检查服务状态
-        window.addEventListener('load', checkService);
+        // 连接远程桌面
+        function connectToRemoteDesktop() {
+            const connectionInfo = document.getElementById('connectionInfo');
+            const connectBtn = document.getElementById('connectBtn');
+            
+            // 显示连接信息
+            connectionInfo.style.display = 'block';
+            connectBtn.innerHTML = '🔗 连接中...';
+            connectBtn.disabled = true;
+            
+            // 打开远程桌面页面
+            const remoteUrl = 'http://106.14.198.45/guacamole/';
+            const newWindow = window.open(remoteUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
+            
+            if (newWindow) {
+                // 新窗口打开成功
+                connectionInfo.innerHTML = '<p>✅ 连接窗口已打开</p><p><small>请在新建窗口中完成登录</small></p>';
+            } else {
+                // 新窗口被阻止
+                connectionInfo.innerHTML = `
+                    <p>❌ 弹出窗口被阻止</p>
+                    <p><small>请允许弹出窗口或手动访问：</small></p>
+                    <p><a href="${remoteUrl}" target="_blank" style="color: #007bff;">点击这里手动访问</a></p>
+                `;
+            }
+            
+            // 3秒后恢复按钮状态
+            setTimeout(() => {
+                connectBtn.innerHTML = '🚀 启动远程桌面连接';
+                connectBtn.disabled = false;
+            }, 3000);
+        }
+
+        // 页面加载完成后检测服务状态
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceStatus();
+            
+            // 每30秒检测一次服务状态
+            setInterval(checkServiceStatus, 30000);
+        });
+
+        // 键盘快捷键支持
+        document.addEventListener('keydown', function(event) {
+            // Ctrl + Enter 快速连接
+            if (event.ctrlKey && event.key === 'Enter') {
+                connectToRemoteDesktop();
+            }
+        });
     </script>
 </body>
 </html>

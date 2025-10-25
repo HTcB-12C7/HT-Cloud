@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>黑铁云远程桌面服务</title>
     <style>
+        /* 保持原有样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -100,6 +101,9 @@
         }
         .btn-secondary {
             background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
         .warning {
             background: #fff3cd;
@@ -256,16 +260,20 @@
                 </div>
 
                 <div id="serviceStatus" class="status online">
-                    ✅ 服务状态：在线 (使用CORS代理)
+                    ✅ 服务状态：在线
                 </div>
 
                 <button onclick="openRemoteDesktopModal()" class="btn" id="connectBtn">
                     🚀 启动远程桌面连接
                 </button>
 
+                <button onclick="downloadLocalProxy()" class="btn btn-success">
+                    📥 下载本地代理页面
+                </button>
+
                 <div style="text-align: center; margin-top: 15px;">
                     <a href="http://106.14.198.45:8080/guacamole/" target="_blank" style="color: #007bff; text-decoration: none;">
-                        🔗 直接访问链接 (本地使用)
+                        🔗 直接访问链接
                     </a>
                 </div>
             </div>
@@ -293,7 +301,7 @@
                     <li style="padding: 8px 0;">✅ 点击上方按钮启动远程连接</li>
                     <li style="padding: 8px 0;">✅ 在弹出窗口中输入用户名和密码</li>
                     <li style="padding: 8px 0;">✅ 密码格式：国际+中国组合密码</li>
-                    <li style="padding: 8px 0;">✅ 使用CORS代理绕过安全限制</li>
+                    <li style="padding: 8px 0;">✅ 推荐使用"下载本地代理页面"</li>
                 </ul>
             </div>
         </div>
@@ -308,14 +316,15 @@
     <div id="remoteModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🖥️ 黑铁云远程桌面 (CORS代理)</h3>
+                <h3>🖥️ 黑铁云远程桌面</h3>
                 <button class="close-btn" onclick="closeRemoteDesktopModal()">×</button>
             </div>
             <div class="modal-body">
                 <div id="loadingIndicator" class="loading">
                     <div class="spinner"></div>
-                    <h3>正在通过CORS代理加载远程桌面...</h3>
-                    <p>这可能需要几秒钟时间</p>
+                    <h3>正在尝试多种方式加载远程桌面...</h3>
+                    <p>如果无法加载，请使用"下载本地代理页面"</p>
+                    <div id="proxyStatus" style="margin-top: 20px;"></div>
                 </div>
                 <iframe 
                     id="remoteFrame"
@@ -331,21 +340,57 @@
     </div>
 
     <script>
-        // CORS代理服务列表（免费）
+        // 更好的CORS代理列表
         const CORS_PROXIES = [
-            'https://cors-anywhere.herokuapp.com/',
-            'https://api.codetabs.com/v1/proxy/?quest=',
-            'https://corsproxy.io/?',
-            'https://proxy.cors.sh/'
+            {
+                name: "CORS Proxy",
+                url: "https://api.codetabs.com/v1/proxy/?quest=",
+                working: true
+            },
+            {
+                name: "CORS.sh", 
+                url: "https://proxy.cors.sh/",
+                working: true
+            },
+            {
+                name: "AllOrigins",
+                url: "https://api.allorigins.win/raw?url=",
+                working: true
+            },
+            {
+                name: "WhateverOrigin",
+                url: "http://whateverorigin.org/get?url=",
+                working: true
+            }
         ];
 
         let currentProxyIndex = 0;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
 
         // 获取代理URL
         function getProxyUrl() {
             const targetUrl = 'http://106.14.198.45:8080/guacamole/';
             const proxy = CORS_PROXIES[currentProxyIndex];
-            return proxy + encodeURIComponent(targetUrl);
+            
+            if (proxy.name === "WhateverOrigin") {
+                return proxy.url + encodeURIComponent(targetUrl) + '&callback=?';
+            } else if (proxy.name === "AllOrigins") {
+                return proxy.url + encodeURIComponent(targetUrl);
+            } else {
+                return proxy.url + encodeURIComponent(targetUrl);
+            }
+        }
+
+        // 更新代理状态显示
+        function updateProxyStatus(message) {
+            const statusElement = document.getElementById('proxyStatus');
+            statusElement.innerHTML = `
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px;">
+                    <strong>当前尝试:</strong> ${CORS_PROXIES[currentProxyIndex].name}<br>
+                    ${message}
+                </div>
+            `;
         }
 
         // 打开远程桌面模态框
@@ -354,40 +399,150 @@
             const remoteFrame = document.getElementById('remoteFrame');
             const loadingIndicator = document.getElementById('loadingIndicator');
             
-            // 显示模态框
             modal.style.display = 'block';
             loadingIndicator.style.display = 'flex';
             remoteFrame.style.display = 'none';
+            retryCount = 0;
             
-            // 使用CORS代理加载
-            const proxyUrl = getProxyUrl();
-            console.log('使用代理:', CORS_PROXIES[currentProxyIndex]);
-            remoteFrame.src = proxyUrl;
+            // 先尝试直接加载（在某些浏览器中可能工作）
+            tryDirectLoad();
+        }
+
+        // 尝试直接加载
+        function tryDirectLoad() {
+            updateProxyStatus('尝试直接加载...');
+            const remoteFrame = document.getElementById('remoteFrame');
+            remoteFrame.src = 'http://106.14.198.45:8080/guacamole/';
             
-            // 设置超时检测
             setTimeout(() => {
                 if (remoteFrame.style.display === 'none') {
-                    console.log('代理超时，尝试下一个代理');
                     tryNextProxy();
                 }
-            }, 10000);
+            }, 3000);
         }
 
         // 尝试下一个代理
         function tryNextProxy() {
+            if (retryCount >= MAX_RETRIES) {
+                showFallbackOptions();
+                return;
+            }
+            
             currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+            retryCount++;
+            
             const loadingIndicator = document.getElementById('loadingIndicator');
             const remoteFrame = document.getElementById('remoteFrame');
             
-            loadingIndicator.innerHTML = `
-                <div class="spinner"></div>
-                <h3>尝试代理服务器 ${currentProxyIndex + 1}/${CORS_PROXIES.length}</h3>
-                <p>正在重新加载...</p>
-            `;
+            updateProxyStatus(`尝试中... (${retryCount}/${MAX_RETRIES})`);
             
             const proxyUrl = getProxyUrl();
-            console.log('切换到代理:', CORS_PROXIES[currentProxyIndex]);
+            console.log('使用代理:', CORS_PROXIES[currentProxyIndex].name, proxyUrl);
             remoteFrame.src = proxyUrl;
+        }
+
+        // 显示备用选项
+        function showFallbackOptions() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.innerHTML = `
+                <div style="text-align: center; color: #721c24;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">🔧</div>
+                    <h3>需要手动解决方案</h3>
+                    <p>由于浏览器安全限制，无法直接加载</p>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                        <strong>推荐解决方案：</strong>
+                        <ol style="text-align: left; margin: 10px 0; padding-left: 20px;">
+                            <li>点击"下载本地代理页面"按钮</li>
+                            <li>在工作电脑打开下载的HTML文件</li>
+                            <li>即可正常访问远程桌面</li>
+                        </ol>
+                    </div>
+                    <button onclick="downloadLocalProxy()" class="btn btn-success" style="margin: 10px;">
+                        📥 下载本地代理页面
+                    </button>
+                    <button onclick="closeRemoteDesktopModal()" class="btn btn-secondary" style="margin: 10px;">
+                        关闭
+                    </button>
+                </div>
+            `;
+        }
+
+        // 下载本地代理页面
+        function downloadLocalProxy() {
+            const proxyHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑铁云远程桌面 - 本地代理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .login-info {
+            background: rgba(255,255,255,0.1);
+            margin: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .info-item {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+        }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 200px);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖥️ 黑铁云远程桌面</h1>
+        <p>本地代理访问 - 安全连接</p>
+    </div>
+    
+    <div class="login-info">
+        <div class="info-item"><strong>👤 用户名：</strong> HTcB-12C7</div>
+        <div class="info-item"><strong>🔑 密码：</strong> 国际+中国密码组合 (11275800HTc$——11495800Cqx￥)</div>
+        <div class="info-item"><strong>💻 目标：</strong> HTcWindows01 - 阿里云上海</div>
+    </div>
+
+    <iframe src="http://106.14.198.45:8080/guacamole/" 
+            allow="fullscreen"
+            title="黑铁云远程桌面">
+    </iframe>
+
+    <script>
+        console.log('黑铁云远程桌面本地代理已启动');
+    </script>
+</body>
+</html>`;
+            
+            const blob = new Blob([proxyHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '黑铁云远程桌面代理.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('✅ 代理页面已下载！\n\n请在工作电脑打开下载的HTML文件即可访问远程桌面。');
         }
 
         // 关闭远程桌面模态框
@@ -397,7 +552,8 @@
             
             remoteFrame.src = '';
             modal.style.display = 'none';
-            currentProxyIndex = 0; // 重置代理索引
+            currentProxyIndex = 0;
+            retryCount = 0;
         }
 
         // iframe加载完成
@@ -407,35 +563,13 @@
             
             loadingIndicator.style.display = 'none';
             remoteFrame.style.display = 'block';
-            console.log('远程桌面加载成功，使用代理:', CORS_PROXIES[currentProxyIndex]);
+            console.log('远程桌面加载成功');
         }
 
         // iframe加载错误
         function onRemoteFrameError() {
-            console.log('代理加载失败:', CORS_PROXIES[currentProxyIndex]);
-            
-            if (currentProxyIndex < CORS_PROXIES.length - 1) {
-                // 尝试下一个代理
-                tryNextProxy();
-            } else {
-                // 所有代理都失败
-                const loadingIndicator = document.getElementById('loadingIndicator');
-                loadingIndicator.innerHTML = `
-                    <div style="text-align: center; color: #721c24;">
-                        <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
-                        <h3>所有代理服务器都连接失败</h3>
-                        <p>请尝试以下解决方案：</p>
-                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
-                            <strong>解决方案：</strong>
-                            <ol style="text-align: left; margin: 10px 0; padding-left: 20px;">
-                                <li>点击"直接访问链接"在新标签页打开</li>
-                                <li>或在工作电脑保存本地HTML文件访问</li>
-                            </ol>
-                        </div>
-                        <button onclick="closeRemoteDesktopModal()" class="btn btn-secondary">关闭</button>
-                    </div>
-                `;
-            }
+            console.log('代理加载失败，尝试下一个');
+            setTimeout(tryNextProxy, 1000);
         }
 
         // 键盘快捷键
